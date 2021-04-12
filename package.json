@@ -1,0 +1,34 @@
+{
+  "name": "@telenko/react-form",
+  "version": "0.0.1-beta",
+  "description": "...tbd",
+  "main": "src/useForm.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/telenko/react-form.git"
+  },
+  "keywords": [
+    "react",
+    "form",
+    "hook",
+    "useForm",
+    "yup"
+  ],
+  "author": "Andrii Telenko",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/telenko/react-form/issues"
+  },
+  "homepage": "https://github.com/telenko/react-form#readme",
+  "devDependencies": {
+    "lodash": "^4.17.21",
+    "react": "^17.0.2"
+  },
+  "peerDependencies": {
+    "lodash": "*",
+    "react": "*"
+  }
+}
