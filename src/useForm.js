@@ -2,32 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import set from "lodash/set";
 import get from "lodash/get";
 
-type TouchedValues<T> = { [key in keyof T]: boolean };
-type Validator<T> = (
-  values: Partial<T>,
-  field?: keyof T
-) => ErrorValues<T> | Promise<ErrorValues<T>>;
-type ValidatorHookResponse<T = any> = [Validator<T>];
-type ErrorValues<T> = Partial<{ [key in keyof T]: string }>;
-type FormValues<T> = Partial<T>;
-export type Form<T> = {
-  values: FormValues<T>;
-  touched: TouchedValues<T>;
-  errors: ErrorValues<T>;
-  submitted: boolean;
-  handleChange: (name: keyof T) => (v: any) => void;
-  handleEventChange: (e: any) => void;
-  setFieldTouched: (name: keyof T, t: boolean) => void;
-  setFieldValue: (name: keyof T, v: any) => void;
-  validate: () => void;
-  needHighlight: (name: keyof T) => boolean;
-  valid: boolean;
-  reset: () => void;
-  submit: () => void;
-};
-
-function parseYupErrors<T>(yupError: any): ErrorValues<T> {
-  let errors: ErrorValues<T> = {};
+function parseYupErrors(yupError) {
+  let errors = {};
   if (yupError.inner) {
     if (yupError.inner.length === 0) {
       return set(errors, yupError.path, yupError.message);
@@ -41,11 +17,11 @@ function parseYupErrors<T>(yupError: any): ErrorValues<T> {
   return errors;
 }
 
-export function useYupSyncValidator<T>(
-  schema: any,
-  dependencies?: Partial<{ [key in keyof T]: string[] }>
-): ValidatorHookResponse<T> {
-  const errorsRef = useRef<ErrorValues<T>>({});
+export function useYupSyncValidator(
+  schema,
+  dependencies
+) {
+  const errorsRef = useRef({});
   const runGlobalValidation = useCallback((values) => {
     try {
       schema.validateSync(values, {
@@ -53,7 +29,7 @@ export function useYupSyncValidator<T>(
       });
       errorsRef.current = {};
     } catch (e) {
-      errorsRef.current = parseYupErrors<T>(e);
+      errorsRef.current = parseYupErrors(e);
       return false;
     }
   }, []);
@@ -64,16 +40,16 @@ export function useYupSyncValidator<T>(
     } catch (e) {
       errorsRef.current = {
         ...errorsRef.current,
-        ...parseYupErrors<T>(e),
+        ...parseYupErrors(e),
       };
     }
   }, []);
-  const exportValidator = useCallback<Validator<T>>((values, field) => {
+  const exportValidator = useCallback((values, field) => {
     if (
       typeof field !== "string" ||
       (dependencies &&
         dependencies[field] &&
-        (dependencies[field] as any).length > 0)
+        (dependencies[field]).length > 0)
     ) {
       runGlobalValidation(values);
     } else {
@@ -84,35 +60,35 @@ export function useYupSyncValidator<T>(
   return [exportValidator];
 }
 
-export function useForm<T>(
-  initialValues: FormValues<T>,
-  validator?: Validator<T>,
-  onSubmit?: (values: T) => void
-): Form<T> {
+export function useForm(
+  initialValues,
+  validator,
+  onSubmit
+) {
   const [submitRequested, setSubmitRequested] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [values, setValues] = useState<Partial<T>>(initialValues);
+  const [values, setValues] = useState(initialValues);
   const keys = useMemo(() => Object.keys(initialValues), []);
-  const [touched, setTouched] = useState<TouchedValues<T>>(
-    (): TouchedValues<T> => {
-      const response: any = {};
+  const [touched, setTouched] = useState(
+    () => {
+      const response = {};
       for (const key in keys) {
         response[key] = false;
       }
-      return response as TouchedValues<T>;
+      return response;
     }
   );
-  const [errors, setErrors] = useState<ErrorValues<T>>(
-    (): ErrorValues<T> => {
-      const response: any = {};
+  const [errors, setErrors] = useState(
+    () => {
+      const response = {};
       for (const key in keys) {
         response[key] = "";
       }
-      return response as ErrorValues<T>;
+      return response;
     }
   );
-  const handleChange = (name: keyof T) => {
-    return (v: any) => {
+  const handleChange = (name) => {
+    return (v) => {
       setFieldValue(name, v);
       if (validator) {
         const newErrors = validator({ ...values, [name]: v }, name);
@@ -126,29 +102,29 @@ export function useForm<T>(
       setFieldTouched(name, true);
     };
   };
-  const handleEventChange = (evt: any) => {
-    const value = evt.target?.value;
-    const name = evt.target?.name;
+  const handleEventChange = (evt) => {
+    const value = evt.target.value;
+    const name = evt.target.name;
     handleChange(name)(value);
   };
-  const setFieldValue = (name: keyof T, value: any) => {
+  const setFieldValue = (name, value) => {
     setValues((values) => ({ ...values, [name]: value }));
   };
-  const setFieldTouched = (name: keyof T, isTouched: boolean) => {
+  const setFieldTouched = (name, isTouched) => {
     setTouched((touched) => ({ ...touched, [name]: isTouched }));
   };
   const resetErrors = useCallback(() => {
     const getErrors = () => {
-      const response: any = {};
+      const response = {};
       const keys = Object.keys(errors);
       for (const key in keys) {
         response[key] = "";
       }
-      return response as ErrorValues<T>;
+      return response;
     };
     setErrors(getErrors());
   }, []);
-  const valid = useMemo<boolean>(() => {
+  const valid = useMemo(() => {
     if (!errors) {
       return true;
     }
@@ -157,7 +133,7 @@ export function useForm<T>(
       return true;
     }
     for (let key of keys) {
-      if ((errors as any)[key]) {
+      if ((errors)[key]) {
         return false;
       }
     }
@@ -166,11 +142,11 @@ export function useForm<T>(
   const reset = () => {
     setValues(initialValues);
     const getTouched = () => {
-      const response: any = {};
+      const response = {};
       for (const key in keys) {
         response[key] = false;
       }
-      return response as TouchedValues<T>;
+      return response;
     };
     setTouched(getTouched());
     resetErrors();
@@ -178,7 +154,7 @@ export function useForm<T>(
     setSubmitRequested(false);
   };
   const submit = useCallback(
-    (e?: any) => {
+    (e) => {
       if (e && e.preventDefault) {
         e.preventDefault();
       }
@@ -193,7 +169,7 @@ export function useForm<T>(
   useEffect(() => {
     if (submitRequested) {
       if (valid) {
-        onSubmit && onSubmit(values as T);
+        onSubmit && onSubmit(values);
       }
       setSubmitRequested(false);
     }
@@ -206,8 +182,8 @@ export function useForm<T>(
       }
     }
   }, [values]);
-  const needHighlight = (field: keyof T): boolean =>
-    (errors as any)[field] && (touched[field] || submitted);
+  const needHighlight = (field) =>
+    (errors)[field] && (touched[field] || submitted);
   return {
     values,
     touched,
